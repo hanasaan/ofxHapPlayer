@@ -142,7 +142,7 @@ ofxHapPlayer::ofxHapPlayer() :
     _loaded(false), _videoStream(nullptr), _audioStreamIndex(-1), _frameTime(av_gettime_relative()), _playing(false),
     _wantsUpload(false),
     _demuxer(), _buffer(nullptr), _audioThread(nullptr), _audioOut(), _volume(1.0), _timeout(30000),
-    _positionOnLoad(0.0)
+    _positionOnLoad(0.0), _enableAudio(false), _audioOutputDeviceIndex(0)
 {
     _clock.setPausedAt(true, 0);
     //ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
@@ -211,7 +211,7 @@ void ofxHapPlayer::foundStream(AVStream *stream)
     {
         _videoStream = stream;
     }
-    else if (type == AVMEDIA_TYPE_AUDIO)
+    else if (type == AVMEDIA_TYPE_AUDIO && this->_enableAudio)
     {
         // We will output silence until we have samples to play
 #if OFX_HAP_HAS_CODECPAR
@@ -227,7 +227,7 @@ void ofxHapPlayer::foundStream(AVStream *stream)
         _audioStreamIndex = stream->index;
         _buffer = std::make_shared<ofxHap::RingBuffer>(channels, sampleRate / 8);
 
-        _audioOut.configure(channels, sampleRate, _buffer);
+        _audioOut.configure(channels, sampleRate, _buffer, _audioOutputDeviceIndex);
 
         _audioThread = std::make_shared<ofxHap::AudioThread>(parameters, sampleRate, _buffer, *this);
         _audioThread->setVolume(_volume);
@@ -987,6 +987,21 @@ void ofxHapPlayer::setTimeout(int microseconds)
     _timeout = std::chrono::microseconds(microseconds);
 }
 
+bool ofxHapPlayer::isEnableAudio() const
+{
+	return this->_enableAudio;
+}
+
+void ofxHapPlayer::setEnableAudio(bool audio)
+{
+	this->_enableAudio = audio;
+}
+
+void ofxHapPlayer::setAudioOutputDeviceIndex(int index)
+{
+	_audioOutputDeviceIndex = index;
+}
+
 ofxHapPlayer::AudioOutput::AudioOutput()
 : _started(false), _channels(0), _sampleRate(0)
 {
@@ -1001,36 +1016,47 @@ ofxHapPlayer::AudioOutput::~AudioOutput()
 unsigned int ofxHapPlayer::AudioOutput::getBestRate(unsigned int r) const
 {
     auto devices = _soundStream.getDeviceList();
-    for (const auto& device : devices) {
-        if (device.isDefaultOutput)
-        {
-            auto rates = device.sampleRates;
-            unsigned int bestRate = 0;
-            for (auto rate : rates) {
-                if (rate == r)
-                {
-                    return rate;
-                }
-                else if (rate < r && rate > bestRate)
-                {
-                    bestRate = rate;
-                }
-            }
-            if (bestRate == 0)
-            {
-                bestRate = r;
-            }
-            return bestRate;
-        }
-    }
+	const ofSoundDevice* device_ptr = nullptr;
+	if (_desiredDeviceIndex >= 0 && _desiredDeviceIndex < devices.size()) {
+		device_ptr = &devices[_desiredDeviceIndex];
+	}
+	else {
+		for (const auto& device : devices) {
+			if (device.isDefaultOutput)
+			{
+				device_ptr = &device;
+				break;
+			}
+		}
+	}
+	if (device_ptr) {
+		auto rates = device_ptr->sampleRates;
+		unsigned int bestRate = 0;
+		for (auto rate : rates) {
+			if (rate == r)
+			{
+				return rate;
+			}
+			else if (rate < r && rate > bestRate)
+			{
+				bestRate = rate;
+			}
+		}
+		if (bestRate == 0)
+		{
+			bestRate = r;
+		}
+		return bestRate;
+	}
     return r;
 }
 
-void ofxHapPlayer::AudioOutput::configure(int channels, int sampleRate, std::shared_ptr<ofxHap::RingBuffer> buffer)
+void ofxHapPlayer::AudioOutput::configure(int channels, int sampleRate, std::shared_ptr<ofxHap::RingBuffer> buffer, int deviceIndex)
 {
     _buffer = buffer;
     _channels = channels;
     _sampleRate = sampleRate;
+	_desiredDeviceIndex = deviceIndex;
 }
 
 void ofxHapPlayer::AudioOutput::start()
@@ -1042,6 +1068,11 @@ void ofxHapPlayer::AudioOutput::start()
         settings.numOutputChannels = _channels;
         settings.sampleRate = _sampleRate;
         settings.setOutListener(this);
+
+		auto devices = _soundStream.getDeviceList();
+		if (_desiredDeviceIndex >= 0 && _desiredDeviceIndex < devices.size()) {
+			settings.setOutDevice(devices[_desiredDeviceIndex]);
+		}
 
         // TODO: best values for last 2 params?
         settings.bufferSize = 128;
