@@ -1,4 +1,4 @@
-/*
+﻿/*
 ofxHapPlayer.cpp
 ofxHapPlayer
 
@@ -157,7 +157,7 @@ ofxHapPlayer::ofxHapPlayer() :
     _positionOnLoad(0.0)
 {
     _clock.setPausedAt(true, 0);
-    ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
+    //ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
 }
 
 ofxHapPlayer::~ofxHapPlayer()
@@ -166,7 +166,7 @@ ofxHapPlayer::~ofxHapPlayer()
     Close any loaded movie
     */
     close();
-    ofRemoveListener(ofEvents().update, this, &ofxHapPlayer::update);
+    //ofRemoveListener(ofEvents().update, this, &ofxHapPlayer::update);
 }
 
 bool ofxHapPlayer::load(string name)

@@ -110,7 +110,7 @@ public:
      */
     int                         getTimeout() const;
     void                        setTimeout(int microseconds);
-private:
+protected:
     virtual void    foundMovie(int64_t duration) override;
     virtual void    foundStream(AVStream *stream) override;
     virtual void    foundAllStreams() override;
@@ -137,7 +137,7 @@ private:
         void close();
         unsigned int getBestRate(unsigned int rate) const;
         virtual void audioOut(ofSoundBuffer& buffer) override;
-    private:
+	protected:
         bool                                _started;
         int                                 _channels;
         int                                 _sampleRate;
