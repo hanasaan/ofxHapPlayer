@@ -1,4 +1,4 @@
-/*
+﻿/*
  ofxHapPlayer.h
  ofxHapPlayer
  
@@ -110,6 +110,10 @@ public:
      */
     int                         getTimeout() const;
     void                        setTimeout(int microseconds);
+
+	bool isEnableAudio() const;
+	void setEnableAudio(bool audio);
+	void setAudioOutputDeviceIndex(int index);
 protected:
     virtual void    foundMovie(int64_t duration) override;
     virtual void    foundStream(AVStream *stream) override;
@@ -131,7 +135,7 @@ protected:
     public:
         AudioOutput();
         ~AudioOutput();
-        void configure(int channels, int sampleRate, std::shared_ptr<ofxHap::RingBuffer> buffer);
+		void configure(int channels, int sampleRate, std::shared_ptr<ofxHap::RingBuffer> buffer, int deviceIndex);
         void start();
         void stop();
         void close();
@@ -143,6 +147,7 @@ protected:
         int                                 _sampleRate;
         std::shared_ptr<ofxHap::RingBuffer> _buffer;
         ofSoundStream                       _soundStream;
+		int _desiredDeviceIndex;
     };
     class DecodedFrame {
     public:
@@ -177,6 +182,8 @@ protected:
     float               _volume;
     std::chrono::microseconds               _timeout;
     float               _positionOnLoad;
+	bool                _enableAudio;
+	int                 _audioOutputDeviceIndex;
 };
 
 #endif /* defined(__ofxHapPlayer__) */
