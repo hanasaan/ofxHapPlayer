@@ -1,4 +1,4 @@
-﻿/*
+/*
  ofxHapPlayer.h
  ofxHapPlayer
  
@@ -111,9 +111,13 @@ public:
     int                         getTimeout() const;
     void                        setTimeout(int microseconds);
 
-	bool isEnableAudio() const;
-	void setEnableAudio(bool audio);
-	void setAudioOutputDeviceIndex(int index);
+	bool 						isEnableAudio() const;
+	void 						setEnableAudio(bool audio);
+	void 						setAudioOutputDeviceIndex(int index);
+	
+	void 						enableAutoUpdate();
+	void 						disableAutoUpdate();
+	bool 						isAutoUpdateEnabled() const;
 protected:
     virtual void    foundMovie(int64_t duration) override;
     virtual void    foundStream(AVStream *stream) override;
@@ -186,6 +190,9 @@ protected:
     float               _positionOnLoad;
 	bool                _enableAudio;
 	int                 _audioOutputDeviceIndex;
+	bool 				_autoUpdateAttached;
+	
+	
 };
 
 #endif /* defined(__ofxHapPlayer__) */

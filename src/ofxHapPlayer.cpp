@@ -1,4 +1,4 @@
-﻿/*
+/*
 ofxHapPlayer.cpp
 ofxHapPlayer
 
@@ -174,10 +174,10 @@ namespace ofxHapPY {
 ofxHapPlayer::ofxHapPlayer() :
     _loaded(false), _videoStream(nullptr), _audioStreamIndex(-1), _frameTime(av_gettime_relative()), _playing(false),
     _wantsUpload(false),
-    _demuxer(), _buffer(nullptr), _audioThread(nullptr), _audioOut(), _volume(1.0), _timeout(30000), _positionOnLoad(0.0), _enableAudio(false), _audioOutputDeviceIndex(0)
+    _demuxer(), _buffer(nullptr), _audioThread(nullptr), _audioOut(), _volume(1.0), _timeout(30000), _positionOnLoad(0.0), _enableAudio(false), _audioOutputDeviceIndex(0), _autoUpdateAttached(false)
 {
     _clock.setPausedAt(true, 0);
-    //ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
+	enableAutoUpdate();
 }
 
 ofxHapPlayer::~ofxHapPlayer()
@@ -186,7 +186,7 @@ ofxHapPlayer::~ofxHapPlayer()
     Close any loaded movie
     */
     close();
-    //ofRemoveListener(ofEvents().update, this, &ofxHapPlayer::update);
+	disableAutoUpdate();
 }
 
 bool ofxHapPlayer::load(string name)
@@ -1194,6 +1194,24 @@ void ofxHapPlayer::setEnableAudio(bool audio) {
 
 void ofxHapPlayer::setAudioOutputDeviceIndex(int index) {
 	_audioOutputDeviceIndex = index;
+}
+	
+void ofxHapPlayer::enableAutoUpdate() {
+	if (!_autoUpdateAttached) {
+		ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
+		_autoUpdateAttached = true;
+	}
+}
+
+void ofxHapPlayer::disableAutoUpdate() {
+	if (_autoUpdateAttached) {
+		ofRemoveListener(ofEvents().update, this, &ofxHapPlayer::update);
+		_autoUpdateAttached = false;
+	}
+}
+
+bool ofxHapPlayer::isAutoUpdateEnabled() const {
+	return _autoUpdateAttached;
 }
 
 ofxHapPlayer::AudioOutput::AudioOutput()
