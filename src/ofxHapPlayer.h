@@ -156,6 +156,7 @@ protected:
         void    invalidate();
         void    clear();
         std::vector<char>   buffer;
+		std::vector<char>   buffer2; // For HapM alpha texture (A_RGTC1)
         int64_t             pts;
         int64_t             duration;
         int64_t             index;
@@ -170,6 +171,7 @@ protected:
     uint64_t            _frameTime;
     ofShader            _shader;
     ofTexture           _texture;
+	ofTexture           _textureAlpha; // Alpha texture for HapM (A_RGTC1)
     bool                _playing;
     bool                _wantsUpload;
 	string              _moviePath;
