@@ -80,15 +80,15 @@ namespace ofxHapPY {
 	uniform sampler2D alpha_src;\
 	const vec4 offsets = vec4(-0.50196078431373, -0.50196078431373, 0.0, 0.0);\
 	void main() {\
-		vec4 CoCgSY = texture2D(cocgsy_src, gl_TexCoord[0].xy);\
-		float theAlpha = texture2D(alpha_src, gl_TexCoord[0].xy).r;\
-		CoCgSY += offsets;\
-		float scale = (CoCgSY.z * (255.0 / 8.0)) + 1.0;\
-		float Co = CoCgSY.x / scale;\
-		float Cg = CoCgSY.y / scale;\
-		float Y = CoCgSY.w;\
-		vec4 rgba = vec4(Y + Co - Cg, Y + Cg, Y - Co - Cg, theAlpha);\
-		gl_FragColor = rgba;\
+	vec4 CoCgSY = texture2D(cocgsy_src, gl_TexCoord[0].xy);\
+	float theAlpha = texture2D(alpha_src, gl_TexCoord[0].xy).r;\
+	CoCgSY += offsets;\
+	float scale = (CoCgSY.z * (255.0 / 8.0)) + 1.0;\
+	float Co = CoCgSY.x / scale;\
+	float Cg = CoCgSY.y / scale;\
+	float Y = CoCgSY.w;\
+	vec4 rgba = vec4(Y + Co - Cg, Y + Cg, Y - Co - Cg, theAlpha);\
+	gl_FragColor = rgba * gl_Color;\
 	}";
 	
     /*
@@ -547,7 +547,6 @@ void ofxHapPlayer::update(ofEventArgs & args)
                 else
                 {
                     _decodedFrame.invalidate();
-					_decodedFrame.buffer2.clear(); // Clear alpha buffer if present
                 }
                 av_packet_free(&packet);
             }
@@ -644,28 +643,6 @@ ofTexture* ofxHapPlayer::getTexture()
 
         _texture.bind();
 
-		// Allocate alpha texture for HapM if needed
-		if (isHapM && _textureAlpha.isAllocated() == false)
-		{
-			// Allocate second compressed texture for RGTC1 alpha
-			ofTextureData aData;
-			#if OFX_HAP_HAS_CODECPAR
-				aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width);
-				aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height);
-			#else
-				aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width);
-				aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
-			#endif
-			aData.textureTarget = GL_TEXTURE_2D;
-			aData.glInternalFormat = internalFormatAlpha;
-			_textureAlpha.allocate(aData, GL_RED, GL_UNSIGNED_BYTE);
-			// Store actual dims
-			_textureAlpha.texData.width = _videoStream->codecpar->width;
-			_textureAlpha.texData.height = _videoStream->codecpar->height;
-			_textureAlpha.texData.tex_t = _textureAlpha.texData.width / _textureAlpha.texData.tex_w;
-			_textureAlpha.texData.tex_u = _textureAlpha.texData.height / _textureAlpha.texData.tex_h;
-		}
-
 #if defined(TARGET_OSX)
         if (ofGetGLRenderer()->getGLVersionMajor() < 3)
         {
@@ -702,18 +679,42 @@ ofTexture* ofxHapPlayer::getTexture()
 #endif
         _texture.unbind();
 
-        // Upload alpha texture for HapM (if present)
-		if (isHapM && !_decodedFrame.buffer2.empty()) {
+		// Allocate alpha texture for HapM if needed
+		if (isHapM) {
+			if (_textureAlpha.isAllocated() == false) {
+				// Allocate second compressed texture for RGTC1 alpha
+				ofTextureData aData;
+#if OFX_HAP_HAS_CODECPAR
+				aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width);
+				aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height);
+#else
+				aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width);
+				aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
+#endif
+				aData.textureTarget = GL_TEXTURE_2D;
+				aData.glInternalFormat = internalFormatAlpha;
+				_textureAlpha.allocate(aData, GL_RED, GL_UNSIGNED_BYTE);
+				// Store actual dims
+				_textureAlpha.texData.width = _videoStream->codecpar->width;
+				_textureAlpha.texData.height = _videoStream->codecpar->height;
+				_textureAlpha.texData.tex_t = _textureAlpha.texData.width / _textureAlpha.texData.tex_w;
+				_textureAlpha.texData.tex_u = _textureAlpha.texData.height / _textureAlpha.texData.tex_h;
+			}
+
 			_textureAlpha.bind();
+
 #if defined(TARGET_OSX)
-			if (ofGetGLRenderer()->getGLVersionMajor() < 3) {
+			if (ofGetGLRenderer()->getGLVersionMajor() < 3)
+			{
 				glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
 			}
 			glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_TRUE);
 			glTextureRangeAPPLE(GL_TEXTURE_2D, _decodedFrame.buffer2.size(), _decodedFrame.buffer2.data());
 #endif
 			glCompressedTexSubImage2D(GL_TEXTURE_2D,
-				0, 0, 0,
+				0,
+				0,
+				0,
 #if OFX_HAP_HAS_CODECPAR
 				ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width),
 				ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height),
@@ -724,13 +725,18 @@ ofTexture* ofxHapPlayer::getTexture()
 				internalFormatAlpha,
 				static_cast<GLsizei>(_decodedFrame.buffer2.size()),
 				_decodedFrame.buffer2.data());
+
 #if defined(TARGET_OSX)
 			if (ofGetGLRenderer()->getGLVersionMajor() < 3)
+			{
 				glPopClientAttrib();
-			else
+			} else
+			{
 				glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
+			}
 #endif
 			_textureAlpha.unbind();
+
 		}
         _wantsUpload = false;
     }
