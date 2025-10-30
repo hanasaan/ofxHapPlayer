@@ -1,4 +1,4 @@
-/*
+﻿/*
 ofxHapPlayer.cpp
 ofxHapPlayer
 
@@ -480,7 +480,9 @@ void ofxHapPlayer::update(ofEventArgs & args)
                                               &bytesUsed,
                                               &textureFormat);
                     }
-                } else if (hapResult == HapResult_No_Error && textureCount == 2) {
+                }
+				else if (hapResult == HapResult_No_Error && textureCount == 2)
+				{
 					// Hap Q+A
 					// --- HapM two-texture decode (color  alpha) ---
 					unsigned int textureFormat0 = 0, textureFormat1 = 0;
@@ -493,15 +495,18 @@ void ofxHapPlayer::update(ofEventArgs & args)
 					uint32_t tag = _videoStream->codec->codec_tag;
 					size_t base = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width) * ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
 #endif
-					if (hapResult == HapResult_No_Error && !ofxHapPY::frameMatchesStream(textureFormat0, tag)) {
+					if (hapResult == HapResult_No_Error && !ofxHapPY::frameMatchesStream(textureFormat0, tag))
+					{
 						hapResult = HapResult_Bad_Frame;
 					}
-					if (hapResult == HapResult_No_Error) {
+					if (hapResult == HapResult_No_Error)
+					{
 						hapResult = HapGetFrameTextureFormat(packet->data, packet->size, 1, &textureFormat1);
 						if (hapResult == HapResult_No_Error
 							&& tag == MKTAG('H', 'a', 'p', 'M')
 							&& textureFormat0 == HapTextureFormat_YCoCg_DXT5
-							&& textureFormat1 == HapTextureFormat_A_RGTC1) {
+							&& textureFormat1 == HapTextureFormat_A_RGTC1)
+						{
 							size_t length0 = base; // YCoCg_DXT5 (8bpp compressed)
 							size_t length1 = base / 2; // A_RGTC1 (4bpp compressed)
 							if (_decodedFrame.buffer.size() != length0) _decodedFrame.buffer.resize(length0);
@@ -520,7 +525,8 @@ void ofxHapPlayer::update(ofEventArgs & args)
 								static_cast<unsigned long>(_decodedFrame.buffer.size()),
 								&bytesUsed0,
 								&outFormat0);
-							if (hapResult == HapResult_No_Error) {
+							if (hapResult == HapResult_No_Error)
+							{
 								// Decode alpha
 								hapResult = HapDecode(packet->data,
 									packet->size,
@@ -532,7 +538,9 @@ void ofxHapPlayer::update(ofEventArgs & args)
 									&bytesUsed1,
 									&outFormat1);
 							}
-						} else {
+						}
+						else
+						{
 							hapResult = HapResult_Bad_Frame;
 						}
 					}
@@ -680,8 +688,10 @@ ofTexture* ofxHapPlayer::getTexture()
         _texture.unbind();
 
 		// Allocate alpha texture for HapM if needed
-		if (isHapM) {
-			if (_textureAlpha.isAllocated() == false) {
+		if (isHapM)
+		{
+			if (_textureAlpha.isAllocated() == false)
+			{
 				// Allocate second compressed texture for RGTC1 alpha
 				ofTextureData aData;
 #if OFX_HAP_HAS_CODECPAR
@@ -730,7 +740,8 @@ ofTexture* ofxHapPlayer::getTexture()
 			if (ofGetGLRenderer()->getGLVersionMajor() < 3)
 			{
 				glPopClientAttrib();
-			} else
+			}
+			else
 			{
 				glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
 			}
@@ -798,36 +809,43 @@ void ofxHapPlayer::draw(float x, float y, float w, float h) {
     ofTexture *t = getTexture();
     if (t->isAllocated())
     {
-        ofShader *sh = getShader();
+#if OFX_HAP_HAS_CODECPAR
+		bool isHapM = (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'));
+#else
+		bool isHapM = (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'));
+#endif
+		ofShader * sh = getShader();
         if (sh)
         {
+			if (isHapM && _textureAlpha.isAllocated()) {
+				// Do not use ofTexture::bind as it may cause an access violation in rare cases.
+				auto & tex = _textureAlpha;
+				glActiveTexture(GL_TEXTURE1);
+				glClientActiveTexture(GL_TEXTURE1);
+				glEnable(tex.getTextureData().textureTarget);
+				glBindTexture(tex.getTextureData().textureTarget, (GLuint)tex.getTextureData().textureID);
+			}
 			sh->begin();
 			// Ensure samplers are bound to expected units
 			// color (cocgsy_src) -> unit 0, alpha_src -> unit 1 (HapM only)
 			sh->setUniform1i("cocgsy_src", 0);
-#if OFX_HAP_HAS_CODECPAR
-			bool isHapM = (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'));
-#else
-			bool isHapM = (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'));
-#endif
 			if (isHapM && _textureAlpha.isAllocated()) {
-				// Bind alpha texture to texture unit 1
-				_textureAlpha.bind(1);
 				sh->setUniform1i("alpha_src", 1);
 			}
         }
         t->draw(x,y,w,h);
         if (sh)
         {
-			// Unbind alpha texture if it was used
-#if OFX_HAP_HAS_CODECPAR
-			bool isHapM = (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'));
-#else
-			bool isHapM = (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'));
-#endif
-			if (isHapM && _textureAlpha.isAllocated()) _textureAlpha.unbind(1);
-            sh->end();
-        }
+			sh->end();
+			if (isHapM && _textureAlpha.isAllocated()) {
+				// Do not use ofTexture::unbind as it may cause an access violation in rare cases.
+				auto & tex = _textureAlpha;
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(tex.getTextureData().textureTarget, 0);
+				glDisable(tex.getTextureData().textureTarget);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
     }
 }
 
