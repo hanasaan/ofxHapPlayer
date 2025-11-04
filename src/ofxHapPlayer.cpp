@@ -76,21 +76,21 @@ namespace ofxHapPY {
     gl_FragColor = rgba * gl_Color;\
     }";
 
-	static const string fragmentShaderHapM = "uniform sampler2D cocgsy_src;\
-	uniform sampler2D alpha_src;\
-	const vec4 offsets = vec4(-0.50196078431373, -0.50196078431373, 0.0, 0.0);\
-	void main() {\
-	vec4 CoCgSY = texture2D(cocgsy_src, gl_TexCoord[0].xy);\
-	float theAlpha = texture2D(alpha_src, gl_TexCoord[0].xy).r;\
-	CoCgSY += offsets;\
-	float scale = (CoCgSY.z * (255.0 / 8.0)) + 1.0;\
-	float Co = CoCgSY.x / scale;\
-	float Cg = CoCgSY.y / scale;\
-	float Y = CoCgSY.w;\
-	vec4 rgba = vec4(Y + Co - Cg, Y + Cg, Y - Co - Cg, theAlpha);\
-	gl_FragColor = rgba * gl_Color;\
-	}";
-	
+    static const string fragmentShaderHapM = "uniform sampler2D cocgsy_src;\
+    uniform sampler2D alpha_src;\
+    const vec4 offsets = vec4(-0.50196078431373, -0.50196078431373, 0.0, 0.0);\
+    void main() {\
+    vec4 CoCgSY = texture2D(cocgsy_src, gl_TexCoord[0].xy);\
+    float theAlpha = texture2D(alpha_src, gl_TexCoord[0].xy).r;\
+    CoCgSY += offsets;\
+    float scale = (CoCgSY.z * (255.0 / 8.0)) + 1.0;\
+    float Co = CoCgSY.x / scale;\
+    float Cg = CoCgSY.y / scale;\
+    float Y = CoCgSY.w;\
+    vec4 rgba = vec4(Y + Co - Cg, Y + Cg, Y - Co - Cg, theAlpha);\
+    gl_FragColor = rgba * gl_Color;\
+    }";
+    
     /*
      Utility to round up to a multiple of 4 for DXT dimensions
      */
@@ -153,13 +153,13 @@ namespace ofxHapPY {
             case MKTAG('H', 'a', 'p', 'Y'):
                 if (frame == HapTextureFormat_YCoCg_DXT5)
                     return true;
-			case MKTAG('H', 'a', 'p', 'M'):
-				// HapM uses two textures: color (YCoCg_DXT5) + alpha (A_RGTC1)
-				if (frame == HapTextureFormat_YCoCg_DXT5)
-					return true;
-				if (frame == HapTextureFormat_A_RGTC1)
-					return true;
-			default:
+            case MKTAG('H', 'a', 'p', 'M'):
+                // HapM uses two textures: color (YCoCg_DXT5) + alpha (A_RGTC1)
+                if (frame == HapTextureFormat_YCoCg_DXT5)
+                    return true;
+                if (frame == HapTextureFormat_A_RGTC1)
+                    return true;
+            default:
                 break;
         }
         return false;
@@ -177,7 +177,7 @@ ofxHapPlayer::ofxHapPlayer() :
     _demuxer(), _buffer(nullptr), _audioThread(nullptr), _audioOut(), _volume(1.0), _timeout(30000), _positionOnLoad(0.0), _enableAudio(false), _audioOutputDeviceIndex(0), _autoUpdateAttached(false)
 {
     _clock.setPausedAt(true, 0);
-	enableAutoUpdate();
+    enableAutoUpdate();
 }
 
 ofxHapPlayer::~ofxHapPlayer()
@@ -186,13 +186,13 @@ ofxHapPlayer::~ofxHapPlayer()
     Close any loaded movie
     */
     close();
-	disableAutoUpdate();
+    disableAutoUpdate();
 }
 
 bool ofxHapPlayer::load(string name)
 {
-	_moviePath = name;
-	
+    _moviePath = name;
+    
     /*
     Close any open movie
     */
@@ -243,7 +243,7 @@ void ofxHapPlayer::foundStream(AVStream *stream)
     {
         _videoStream = stream;
     }
-	else if (type == AVMEDIA_TYPE_AUDIO && this->_enableAudio)
+    else if (type == AVMEDIA_TYPE_AUDIO && this->_enableAudio)
     {
         // We will output silence until we have samples to play
 #if OFX_HAP_HAS_CODECPAR
@@ -339,7 +339,7 @@ void ofxHapPlayer::close()
     _audioStreamIndex = -1;
     _shader.unload();
     _texture.clear();
-	_textureAlpha.clear();
+    _textureAlpha.clear();
     _decodedFrame.clear();
     _loaded = false;
     _error.clear();
@@ -481,70 +481,70 @@ void ofxHapPlayer::update(ofEventArgs & args)
                                               &textureFormat);
                     }
                 }
-				else if (hapResult == HapResult_No_Error && textureCount == 2)
-				{
-					// Hap Q+A
-					// --- HapM two-texture decode (color  alpha) ---
-					unsigned int textureFormat0 = 0, textureFormat1 = 0;
-					hapResult = HapGetFrameTextureFormat(packet->data, packet->size, 0, &textureFormat0);
+                else if (hapResult == HapResult_No_Error && textureCount == 2)
+                {
+                    // Hap Q+A
+                    // --- HapM two-texture decode (color  alpha) ---
+                    unsigned int textureFormat0 = 0, textureFormat1 = 0;
+                    hapResult = HapGetFrameTextureFormat(packet->data, packet->size, 0, &textureFormat0);
 
 #if OFX_HAP_HAS_CODECPAR
-					uint32_t tag = _videoStream->codecpar->codec_tag;
-					size_t base = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width) * ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height);
+                    uint32_t tag = _videoStream->codecpar->codec_tag;
+                    size_t base = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width) * ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height);
 #else
-					uint32_t tag = _videoStream->codec->codec_tag;
-					size_t base = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width) * ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
+                    uint32_t tag = _videoStream->codec->codec_tag;
+                    size_t base = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width) * ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
 #endif
-					if (hapResult == HapResult_No_Error && !ofxHapPY::frameMatchesStream(textureFormat0, tag))
-					{
-						hapResult = HapResult_Bad_Frame;
-					}
-					if (hapResult == HapResult_No_Error)
-					{
-						hapResult = HapGetFrameTextureFormat(packet->data, packet->size, 1, &textureFormat1);
-						if (hapResult == HapResult_No_Error
-							&& tag == MKTAG('H', 'a', 'p', 'M')
-							&& textureFormat0 == HapTextureFormat_YCoCg_DXT5
-							&& textureFormat1 == HapTextureFormat_A_RGTC1)
-						{
-							size_t length0 = base; // YCoCg_DXT5 (8bpp compressed)
-							size_t length1 = base / 2; // A_RGTC1 (4bpp compressed)
-							if (_decodedFrame.buffer.size() != length0) _decodedFrame.buffer.resize(length0);
-							if (_decodedFrame.buffer2.size() != length1) _decodedFrame.buffer2.resize(length1);
+                    if (hapResult == HapResult_No_Error && !ofxHapPY::frameMatchesStream(textureFormat0, tag))
+                    {
+                        hapResult = HapResult_Bad_Frame;
+                    }
+                    if (hapResult == HapResult_No_Error)
+                    {
+                        hapResult = HapGetFrameTextureFormat(packet->data, packet->size, 1, &textureFormat1);
+                        if (hapResult == HapResult_No_Error
+                            && tag == MKTAG('H', 'a', 'p', 'M')
+                            && textureFormat0 == HapTextureFormat_YCoCg_DXT5
+                            && textureFormat1 == HapTextureFormat_A_RGTC1)
+                        {
+                            size_t length0 = base; // YCoCg_DXT5 (8bpp compressed)
+                            size_t length1 = base / 2; // A_RGTC1 (4bpp compressed)
+                            if (_decodedFrame.buffer.size() != length0) _decodedFrame.buffer.resize(length0);
+                            if (_decodedFrame.buffer2.size() != length1) _decodedFrame.buffer2.resize(length1);
 
-							unsigned long bytesUsed0 = 0, bytesUsed1 = 0;
-							unsigned int outFormat0 = 0, outFormat1 = 0;
+                            unsigned long bytesUsed0 = 0, bytesUsed1 = 0;
+                            unsigned int outFormat0 = 0, outFormat1 = 0;
 
-							// Decode color
-							hapResult = HapDecode(packet->data,
-								packet->size,
-								0,
-								ofxHapPY::doDecode,
-								NULL,
-								_decodedFrame.buffer.data(),
-								static_cast<unsigned long>(_decodedFrame.buffer.size()),
-								&bytesUsed0,
-								&outFormat0);
-							if (hapResult == HapResult_No_Error)
-							{
-								// Decode alpha
-								hapResult = HapDecode(packet->data,
-									packet->size,
-									1,
-									ofxHapPY::doDecode,
-									NULL,
-									_decodedFrame.buffer2.data(),
-									static_cast<unsigned long>(_decodedFrame.buffer2.size()),
-									&bytesUsed1,
-									&outFormat1);
-							}
-						}
-						else
-						{
-							hapResult = HapResult_Bad_Frame;
-						}
-					}
-				}
+                            // Decode color
+                            hapResult = HapDecode(packet->data,
+                                packet->size,
+                                0,
+                                ofxHapPY::doDecode,
+                                NULL,
+                                _decodedFrame.buffer.data(),
+                                static_cast<unsigned long>(_decodedFrame.buffer.size()),
+                                &bytesUsed0,
+                                &outFormat0);
+                            if (hapResult == HapResult_No_Error)
+                            {
+                                // Decode alpha
+                                hapResult = HapDecode(packet->data,
+                                    packet->size,
+                                    1,
+                                    ofxHapPY::doDecode,
+                                    NULL,
+                                    _decodedFrame.buffer2.data(),
+                                    static_cast<unsigned long>(_decodedFrame.buffer2.size()),
+                                    &bytesUsed1,
+                                    &outFormat1);
+                            }
+                        }
+                        else
+                        {
+                            hapResult = HapResult_Bad_Frame;
+                        }
+                    }
+                }
                 if (hapResult == HapResult_No_Error)
                 {
                     _decodedFrame.pts = packet->pts;
@@ -575,8 +575,8 @@ bool ofxHapPlayer::getHapAvailable() const
             case MKTAG('H', 'a', 'p', '1'):
             case MKTAG('H', 'a', 'p', '5'):
             case MKTAG('H', 'a', 'p', 'Y'):
-			case MKTAG('H', 'a', 'p', 'M'):
-				return true;
+            case MKTAG('H', 'a', 'p', 'M'):
+                return true;
             default:
                 return false;
         }
@@ -590,8 +590,8 @@ ofTexture* ofxHapPlayer::getTexture()
     if (_wantsUpload && _videoStream)
     {
         GLenum internalFormat;
-		GLenum internalFormatAlpha = 0; // GL compressed format for alpha (RGTC1) used by HapM
-		bool isHapM = false;
+        GLenum internalFormatAlpha = 0; // GL compressed format for alpha (RGTC1) used by HapM
+        bool isHapM = false;
 #if OFX_HAP_HAS_CODECPAR
         switch (_videoStream->codecpar->codec_tag) {
 #else
@@ -605,11 +605,11 @@ ofTexture* ofxHapPlayer::getTexture()
                 internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
                 break;
             case MKTAG('H', 'a', 'p', 'M'):
-				// HapM primary texture is YCoCg_DXT5 (same upload as DXT5) + separate alpha RGTC1
-				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-				internalFormatAlpha = GL_COMPRESSED_RED_RGTC1; // Requires ARB_texture_compression_rgtc
-				isHapM = true;
-				break;
+                // HapM primary texture is YCoCg_DXT5 (same upload as DXT5) + separate alpha RGTC1
+                internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                internalFormatAlpha = GL_COMPRESSED_RED_RGTC1; // Requires ARB_texture_compression_rgtc
+                isHapM = true;
+                break;
             default:
                 // TODO: fail
                 internalFormat = GL_RGBA;
@@ -687,68 +687,68 @@ ofTexture* ofxHapPlayer::getTexture()
 #endif
         _texture.unbind();
 
-		// Allocate alpha texture for HapM if needed
-		if (isHapM)
-		{
-			if (_textureAlpha.isAllocated() == false)
-			{
-				// Allocate second compressed texture for RGTC1 alpha
-				ofTextureData aData;
+        // Allocate alpha texture for HapM if needed
+        if (isHapM)
+        {
+            if (_textureAlpha.isAllocated() == false)
+            {
+                // Allocate second compressed texture for RGTC1 alpha
+                ofTextureData aData;
 #if OFX_HAP_HAS_CODECPAR
-				aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width);
-				aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height);
+                aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width);
+                aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height);
 #else
-				aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width);
-				aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
+                aData.width = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width);
+                aData.height = ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height);
 #endif
-				aData.textureTarget = GL_TEXTURE_2D;
-				aData.glInternalFormat = internalFormatAlpha;
-				_textureAlpha.allocate(aData, GL_RED, GL_UNSIGNED_BYTE);
-				// Store actual dims
-				_textureAlpha.texData.width = _videoStream->codecpar->width;
-				_textureAlpha.texData.height = _videoStream->codecpar->height;
-				_textureAlpha.texData.tex_t = _textureAlpha.texData.width / _textureAlpha.texData.tex_w;
-				_textureAlpha.texData.tex_u = _textureAlpha.texData.height / _textureAlpha.texData.tex_h;
-			}
+                aData.textureTarget = GL_TEXTURE_2D;
+                aData.glInternalFormat = internalFormatAlpha;
+                _textureAlpha.allocate(aData, GL_RED, GL_UNSIGNED_BYTE);
+                // Store actual dims
+                _textureAlpha.texData.width = _videoStream->codecpar->width;
+                _textureAlpha.texData.height = _videoStream->codecpar->height;
+                _textureAlpha.texData.tex_t = _textureAlpha.texData.width / _textureAlpha.texData.tex_w;
+                _textureAlpha.texData.tex_u = _textureAlpha.texData.height / _textureAlpha.texData.tex_h;
+            }
 
-			_textureAlpha.bind();
+            _textureAlpha.bind();
 
 #if defined(TARGET_OSX)
-			if (ofGetGLRenderer()->getGLVersionMajor() < 3)
-			{
-				glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-			}
-			glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_TRUE);
-			glTextureRangeAPPLE(GL_TEXTURE_2D, _decodedFrame.buffer2.size(), _decodedFrame.buffer2.data());
+            if (ofGetGLRenderer()->getGLVersionMajor() < 3)
+            {
+                glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+            }
+            glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_TRUE);
+            glTextureRangeAPPLE(GL_TEXTURE_2D, _decodedFrame.buffer2.size(), _decodedFrame.buffer2.data());
 #endif
-			glCompressedTexSubImage2D(GL_TEXTURE_2D,
-				0,
-				0,
-				0,
+            glCompressedTexSubImage2D(GL_TEXTURE_2D,
+                0,
+                0,
+                0,
 #if OFX_HAP_HAS_CODECPAR
-				ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width),
-				ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height),
+                ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->width),
+                ofxHapPY::roundUpToMultipleOf4(_videoStream->codecpar->height),
 #else
-				ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width),
-				ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height),
+                ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->width),
+                ofxHapPY::roundUpToMultipleOf4(_videoStream->codec->height),
 #endif
-				internalFormatAlpha,
-				static_cast<GLsizei>(_decodedFrame.buffer2.size()),
-				_decodedFrame.buffer2.data());
+                internalFormatAlpha,
+                static_cast<GLsizei>(_decodedFrame.buffer2.size()),
+                _decodedFrame.buffer2.data());
 
 #if defined(TARGET_OSX)
-			if (ofGetGLRenderer()->getGLVersionMajor() < 3)
-			{
-				glPopClientAttrib();
-			}
-			else
-			{
-				glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
-			}
+            if (ofGetGLRenderer()->getGLVersionMajor() < 3)
+            {
+                glPopClientAttrib();
+            }
+            else
+            {
+                glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
+            }
 #endif
-			_textureAlpha.unbind();
+            _textureAlpha.unbind();
 
-		}
+        }
         _wantsUpload = false;
     }
     return &_texture;
@@ -778,27 +778,27 @@ ofShader *ofxHapPlayer::getShader()
         if (_shader.isLoaded()) return &_shader;
     }
 #if OFX_HAP_HAS_CODECPAR
-	if (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'))
+    if (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'))
 #else
-	if (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'))
+    if (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'))
 #endif
-	{
-		if (_shader.isLoaded() == false) {
-			// Use same vertex shader, but fragment shader from file for HapM (color/alpha)
-			bool success = _shader.setupShaderFromSource(GL_VERTEX_SHADER, ofxHapPY::vertexShader);
-			if (success) {
-				// Expect file at data/shaders/ScaledCoCgYPlusAToRGBA.frag
-				success = _shader.setupShaderFromSource(GL_FRAGMENT_SHADER, ofxHapPY::fragmentShaderHapM);
-			}
-			if (success) _shader.linkProgram();
-		}
-		if (_shader.isLoaded()) return &_shader;
-	}
+    {
+        if (_shader.isLoaded() == false) {
+            // Use same vertex shader, but fragment shader from file for HapM (color/alpha)
+            bool success = _shader.setupShaderFromSource(GL_VERTEX_SHADER, ofxHapPY::vertexShader);
+            if (success) {
+                // Expect file at data/shaders/ScaledCoCgYPlusAToRGBA.frag
+                success = _shader.setupShaderFromSource(GL_FRAGMENT_SHADER, ofxHapPY::fragmentShaderHapM);
+            }
+            if (success) _shader.linkProgram();
+        }
+        if (_shader.isLoaded()) return &_shader;
+    }
     return nullptr;
 }
 
 string ofxHapPlayer::getMoviePath() const {
-	return _moviePath;
+    return _moviePath;
 }
 
 void ofxHapPlayer::draw(float x, float y) {
@@ -810,42 +810,42 @@ void ofxHapPlayer::draw(float x, float y, float w, float h) {
     if (t->isAllocated())
     {
 #if OFX_HAP_HAS_CODECPAR
-		bool isHapM = (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'));
+        bool isHapM = (_videoStream && _videoStream->codecpar->codec_tag == MKTAG('H', 'a', 'p', 'M'));
 #else
-		bool isHapM = (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'));
+        bool isHapM = (_videoStream && _videoStream->codec->codec_tag == MKTAG('H', 'a', 'p', 'M'));
 #endif
-		ofShader * sh = getShader();
+        ofShader * sh = getShader();
         if (sh)
         {
-			if (isHapM && _textureAlpha.isAllocated()) {
-				// Do not use ofTexture::bind as it may cause an access violation in rare cases.
-				auto & tex = _textureAlpha;
-				glActiveTexture(GL_TEXTURE1);
-				glClientActiveTexture(GL_TEXTURE1);
-				glEnable(tex.getTextureData().textureTarget);
-				glBindTexture(tex.getTextureData().textureTarget, (GLuint)tex.getTextureData().textureID);
-			}
-			sh->begin();
-			// Ensure samplers are bound to expected units
-			// color (cocgsy_src) -> unit 0, alpha_src -> unit 1 (HapM only)
-			sh->setUniform1i("cocgsy_src", 0);
-			if (isHapM && _textureAlpha.isAllocated()) {
-				sh->setUniform1i("alpha_src", 1);
-			}
+            if (isHapM && _textureAlpha.isAllocated()) {
+                // Do not use ofTexture::bind as it may cause an access violation in rare cases.
+                auto & tex = _textureAlpha;
+                glActiveTexture(GL_TEXTURE1);
+                glClientActiveTexture(GL_TEXTURE1);
+                glEnable(tex.getTextureData().textureTarget);
+                glBindTexture(tex.getTextureData().textureTarget, (GLuint)tex.getTextureData().textureID);
+            }
+            sh->begin();
+            // Ensure samplers are bound to expected units
+            // color (cocgsy_src) -> unit 0, alpha_src -> unit 1 (HapM only)
+            sh->setUniform1i("cocgsy_src", 0);
+            if (isHapM && _textureAlpha.isAllocated()) {
+                sh->setUniform1i("alpha_src", 1);
+            }
         }
         t->draw(x,y,w,h);
         if (sh)
         {
-			sh->end();
-			if (isHapM && _textureAlpha.isAllocated()) {
-				// Do not use ofTexture::unbind as it may cause an access violation in rare cases.
-				auto & tex = _textureAlpha;
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(tex.getTextureData().textureTarget, 0);
-				glDisable(tex.getTextureData().textureTarget);
-				glActiveTexture(GL_TEXTURE0);
-			}
-		}
+            sh->end();
+            if (isHapM && _textureAlpha.isAllocated()) {
+                // Do not use ofTexture::unbind as it may cause an access violation in rare cases.
+                auto & tex = _textureAlpha;
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(tex.getTextureData().textureTarget, 0);
+                glDisable(tex.getTextureData().textureTarget);
+                glActiveTexture(GL_TEXTURE0);
+            }
+        }
     }
 }
 
@@ -983,10 +983,10 @@ ofPixelFormat ofxHapPlayer::getPixelFormat() const
 #endif
             case MKTAG('H', 'a', 'p', '5'):
                 return OF_PIXELS_RGBA;
-			case MKTAG('H', 'a', 'p', 'M'):
-				// HapM produces RGBA (color from YCoCg_DXT5, alpha from RGTC1)
-				return OF_PIXELS_RGBA;
-			default:
+            case MKTAG('H', 'a', 'p', 'M'):
+                // HapM produces RGBA (color from YCoCg_DXT5, alpha from RGTC1)
+                return OF_PIXELS_RGBA;
+            default:
                 return OF_PIXELS_RGB;
 
         }
@@ -1209,33 +1209,33 @@ void ofxHapPlayer::setTimeout(int microseconds)
 }
 
 bool ofxHapPlayer::isEnableAudio() const {
-	return this->_enableAudio;
+    return this->_enableAudio;
 }
 
 void ofxHapPlayer::setEnableAudio(bool audio) {
-	this->_enableAudio = audio;
+    this->_enableAudio = audio;
 }
 
 void ofxHapPlayer::setAudioOutputDeviceIndex(int index) {
-	_audioOutputDeviceIndex = index;
+    _audioOutputDeviceIndex = index;
 }
-	
+    
 void ofxHapPlayer::enableAutoUpdate() {
-	if (!_autoUpdateAttached) {
-		ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
-		_autoUpdateAttached = true;
-	}
+    if (!_autoUpdateAttached) {
+        ofAddListener(ofEvents().update, this, &ofxHapPlayer::update);
+        _autoUpdateAttached = true;
+    }
 }
 
 void ofxHapPlayer::disableAutoUpdate() {
-	if (_autoUpdateAttached) {
-		ofRemoveListener(ofEvents().update, this, &ofxHapPlayer::update);
-		_autoUpdateAttached = false;
-	}
+    if (_autoUpdateAttached) {
+        ofRemoveListener(ofEvents().update, this, &ofxHapPlayer::update);
+        _autoUpdateAttached = false;
+    }
 }
 
 bool ofxHapPlayer::isAutoUpdateEnabled() const {
-	return _autoUpdateAttached;
+    return _autoUpdateAttached;
 }
 
 ofxHapPlayer::AudioOutput::AudioOutput()
@@ -1251,33 +1251,33 @@ ofxHapPlayer::AudioOutput::~AudioOutput()
 
 unsigned int ofxHapPlayer::AudioOutput::getBestRate(unsigned int r) const
 {
-	auto devices = _soundStream.getDeviceList();
-	const ofSoundDevice * device_ptr = nullptr;
-	if (_desiredDeviceIndex >= 0 && _desiredDeviceIndex < devices.size()) {
-		device_ptr = &devices[_desiredDeviceIndex];
-	} else {
-		for (const auto & device : devices) {
-			if (device.isDefaultOutput) {
-				device_ptr = &device;
-				break;
-			}
-		}
-	}
-	if (device_ptr) {
-		auto rates = device_ptr->sampleRates;
-		unsigned int bestRate = 0;
-		for (auto rate : rates) {
-			if (rate == r) {
-				return rate;
-			} else if (rate < r && rate > bestRate) {
-				bestRate = rate;
-			}
-		}
-		if (bestRate == 0) {
-			bestRate = r;
-		}
-		return bestRate;
-	}
+    auto devices = _soundStream.getDeviceList();
+    const ofSoundDevice * device_ptr = nullptr;
+    if (_desiredDeviceIndex >= 0 && _desiredDeviceIndex < devices.size()) {
+        device_ptr = &devices[_desiredDeviceIndex];
+    } else {
+        for (const auto & device : devices) {
+            if (device.isDefaultOutput) {
+                device_ptr = &device;
+                break;
+            }
+        }
+    }
+    if (device_ptr) {
+        auto rates = device_ptr->sampleRates;
+        unsigned int bestRate = 0;
+        for (auto rate : rates) {
+            if (rate == r) {
+                return rate;
+            } else if (rate < r && rate > bestRate) {
+                bestRate = rate;
+            }
+        }
+        if (bestRate == 0) {
+            bestRate = r;
+        }
+        return bestRate;
+    }
     return r;
 }
 
@@ -1285,7 +1285,7 @@ void ofxHapPlayer::AudioOutput::configure(int channels, int sampleRate, std::sha
     _buffer = buffer;
     _channels = channels;
     _sampleRate = sampleRate;
-	_desiredDeviceIndex = deviceIndex;
+    _desiredDeviceIndex = deviceIndex;
 }
 
 void ofxHapPlayer::AudioOutput::start()
@@ -1298,10 +1298,10 @@ void ofxHapPlayer::AudioOutput::start()
         settings.sampleRate = _sampleRate;
         settings.setOutListener(this);
 
-		auto devices = _soundStream.getDeviceList();
-		if (_desiredDeviceIndex >= 0 && _desiredDeviceIndex < devices.size()) {
-			settings.setOutDevice(devices[_desiredDeviceIndex]);
-		}
+        auto devices = _soundStream.getDeviceList();
+        if (_desiredDeviceIndex >= 0 && _desiredDeviceIndex < devices.size()) {
+            settings.setOutDevice(devices[_desiredDeviceIndex]);
+        }
 
         // TODO: best values for last 2 params?
         settings.bufferSize = 128;
@@ -1399,5 +1399,5 @@ void ofxHapPlayer::DecodedFrame::clear()
     // Force deallocation of the vector's storage
     // (std::vector::clear() is not required to deallocate storage)
     std::vector<char>().swap(buffer);
-	std::vector<char>().swap(buffer2); // also free alpha buffer
+    std::vector<char>().swap(buffer2); // also free alpha buffer
 }
