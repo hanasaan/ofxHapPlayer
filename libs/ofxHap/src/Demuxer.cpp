@@ -1,4 +1,4 @@
-/*
+﻿/*
  Demuxer.cpp
  ofxHapPlayer
 
@@ -79,7 +79,14 @@ void ofxHap::Demuxer::threadMain(const std::string movie, PacketReceiver& receiv
                 {
                     videoStreamIndex = i;
                 }
-                else
+#if OFX_HAP_HAS_CODECPAR
+				else if (fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && fmt_ctx->streams[i]->codecpar->codec_tag == MKTAG('H', 'a', 'p', '7') && videoStreamIndex == -1)
+#else
+				else if (fmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && fmt_ctx->streams[i]->codec->codec_tag == MKTAG('H', 'a', 'p', '7') && videoStreamIndex == -1)
+#endif
+				{
+					videoStreamIndex = i;
+				} else
                 {
                     fmt_ctx->streams[i]->discard = AVDISCARD_ALL;
                 }

@@ -159,7 +159,10 @@ namespace ofxHapPY {
                     return true;
                 if (frame == HapTextureFormat_A_RGTC1)
                     return true;
-            default:
+			case MKTAG('H', 'a', 'p', '7'):
+				if (frame == HapTextureFormat_RGBA_BPTC_UNORM)
+					return true;
+			default:
                 break;
         }
         return false;
@@ -234,12 +237,14 @@ void ofxHapPlayer::foundStream(AVStream *stream)
     AVCodecParameters *params = stream->codecpar;
     AVMediaType type = params->codec_type;
     AVCodecID codecID = params->codec_id;
+	uint32_t codecTag = params->codec_tag;
 #else
     AVCodecContext *codec = stream->codec;
     AVMediaType type = codec->codec_type;
     AVCodecID codecID = codec->codec_id;
+	uint32_t codecTag = params->codec_tag;
 #endif
-    if (type == AVMEDIA_TYPE_VIDEO && codecID == AV_CODEC_ID_HAP)
+	if (type == AVMEDIA_TYPE_VIDEO && (codecID == AV_CODEC_ID_HAP || codecTag == MKTAG('H', 'a', 'p', '7')))
     {
         _videoStream = stream;
     }
@@ -576,7 +581,8 @@ bool ofxHapPlayer::getHapAvailable() const
             case MKTAG('H', 'a', 'p', '5'):
             case MKTAG('H', 'a', 'p', 'Y'):
             case MKTAG('H', 'a', 'p', 'M'):
-                return true;
+			case MKTAG('H', 'a', 'p', '7'):
+				return true;
             default:
                 return false;
         }
@@ -610,6 +616,9 @@ ofTexture* ofxHapPlayer::getTexture()
                 internalFormatAlpha = GL_COMPRESSED_RED_RGTC1; // Requires ARB_texture_compression_rgtc
                 isHapM = true;
                 break;
+			case MKTAG('H', 'a', 'p', '7'):
+				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+				break;
             default:
                 // TODO: fail
                 internalFormat = GL_RGBA;
@@ -986,7 +995,9 @@ ofPixelFormat ofxHapPlayer::getPixelFormat() const
             case MKTAG('H', 'a', 'p', 'M'):
                 // HapM produces RGBA (color from YCoCg_DXT5, alpha from RGTC1)
                 return OF_PIXELS_RGBA;
-            default:
+			case MKTAG('H', 'a', 'p', '7'):
+				return OF_PIXELS_RGBA;
+			default:
                 return OF_PIXELS_RGB;
 
         }
